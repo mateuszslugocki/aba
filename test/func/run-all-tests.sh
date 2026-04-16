@@ -51,6 +51,8 @@ unit_tests=(
 	test/func/test-aba-root-only-in-aba-sh.sh
 	test/func/test-wait-show.sh
 	test/func/test-resource-pool-resolution.sh
+	test/func/test-preflight-check-vsphere.sh
+	test/func/test-vmware-required-privileges.sh
 )
 
 # Integration tests (slow, may download)
