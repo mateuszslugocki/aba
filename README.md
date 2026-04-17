@@ -593,6 +593,8 @@ aba -D iso
 
 If OpenShift fails to install, see the [Troubleshooting](Troubleshooting.md) readme.
 
+**vSphere-specific:** See [vSphere Preflight Validation](Troubleshooting.md#vsphere-preflight-validation) for how to read vSphere preflight output and how to grant the required vCenter privileges.
+
 Other examples of commands (aba <command>):
 
 `cd mycluster`     # change to the cluster directory with the agent-based install files, using `mycluster` as an example.
