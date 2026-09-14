@@ -1,5 +1,9 @@
 ## [Unreleased](https://github.com/sjbylo/aba/compare/v1.3.2...HEAD)
 
+### Fixed
+
+- **`day2` stopped after the first successful wave of custom manifests** - The manifest batch helper in `scripts/day2.sh` ended on `[ $_fail -gt 0 ] && aba_warn ...`, so a batch with no failures returned 1. `scripts/day2.sh` runs under `-e` and the wave loop pipes into that helper, so the script aborted after the first wave that applied cleanly and the remaining waves never ran, leaving a healthy-looking cluster missing everything the later waves configure. The helper now returns success explicitly; per-file failures remain warnings so later waves still run.
+
 ---
 
 ## [1.3.2](https://github.com/sjbylo/aba/releases/tag/v1.3.2) - 2026-09-13
