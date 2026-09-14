@@ -171,6 +171,44 @@ output=$(cd "$CLUSTER" && bash "$TMPDIR/harness.sh" 2>/dev/null)
 assert_contains "Good file applied" "$output" "good.yaml"
 assert_not_contains "Empty file not applied" "$output" "empty.yaml"
 
+# --- Tests 8-10: errexit behaviour ---
+# scripts/day2.sh runs under `#!/bin/bash -e`, but the harness above is invoked
+# as `bash <file>`, which ignores its shebang. Re-running the same harness as
+# `bash -e` is what reproduces how day2.sh actually executes.
+# Note: this file itself runs under `set -e`, so a harness that is expected to
+# fail must be captured with `&& rc=0 || rc=$?` or it aborts the whole run.
+
+echo "Test 8: waved mode under errexit - every wave runs"
+rm -rf "$CLUSTER/day2-custom-manifests"
+mkdir -p "$CLUSTER/day2-custom-manifests/10-first"
+mkdir -p "$CLUSTER/day2-custom-manifests/20-second"
+echo "kind: A" > "$CLUSTER/day2-custom-manifests/10-first/a.yaml"
+echo "kind: B" > "$CLUSTER/day2-custom-manifests/20-second/b.yaml"
+output=$(cd "$CLUSTER" && bash -e "$TMPDIR/harness.sh" 2>/dev/null) && rc=0 || rc=$?
+assert_eq "errexit: waves applied in order" "$(printf "a.yaml\nb.yaml")" "$output"
+assert_eq "errexit: waved run exits 0" "0" "$rc"
+
+echo "Test 9: flat mode under errexit"
+rm -rf "$CLUSTER/day2-custom-manifests"
+mkdir -p "$CLUSTER/day2-custom-manifests"
+echo "kind: A" > "$CLUSTER/day2-custom-manifests/a-first.yaml"
+echo "kind: B" > "$CLUSTER/day2-custom-manifests/b-second.yaml"
+output=$(cd "$CLUSTER" && bash -e "$TMPDIR/harness.sh" 2>/dev/null) && rc=0 || rc=$?
+assert_eq "errexit: flat mode applies both" "$(printf "a-first.yaml\nb-second.yaml")" "$output"
+assert_eq "errexit: flat run exits 0" "0" "$rc"
+
+echo "Test 10: a failed manifest still lets later waves run"
+rm -rf "$CLUSTER/day2-custom-manifests"
+mkdir -p "$CLUSTER/day2-custom-manifests/10-bad"
+mkdir -p "$CLUSTER/day2-custom-manifests/20-good"
+touch "$CLUSTER/day2-custom-manifests/10-bad/empty.yaml"
+echo "kind: Good" > "$CLUSTER/day2-custom-manifests/20-good/good.yaml"
+output=$(cd "$CLUSTER" && bash -e "$TMPDIR/harness.sh" 2>/dev/null) && rc=0 || rc=$?
+stderr_output=$(cd "$CLUSTER" && bash -e "$TMPDIR/harness.sh" 2>&1 1>/dev/null) || true
+assert_contains "errexit: failed manifest still warns" "$stderr_output" "WARN"
+assert_contains "errexit: later wave still runs" "$output" "good.yaml"
+assert_eq "errexit: run with a failure still exits 0" "0" "$rc"
+
 # --- Summary ---
 echo
 echo "Results: $PASS passed, $FAIL failed"
